@@ -1,0 +1,1800 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-[#FAF7F2]">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Classroom Seating, Quiz & Progress Tracker</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            maroon: {
+              50: '#FDF4F5',
+              100: '#FBE8EB',
+              600: '#8C2337',
+              700: '#6E1D2B',
+              800: '#52141F',
+              900: '#380B14',
+            },
+            slateBlue: {
+              50: '#F2F7FA',
+              100: '#E1EDF3',
+              500: '#4A7C9B',
+              600: '#3B6580',
+              700: '#2C4C61',
+            },
+            ivory: '#FAF7F2',
+            paper: '#FFFDF9',
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #FAF7F2;
+      color: #1E293B;
+    }
+
+    /* Print styles */
+    @media print {
+      body {
+        background-color: #FFFFFF !important;
+        color: #000000 !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .print-only {
+        display: block !important;
+      }
+      .print-page-break {
+        page-break-after: always;
+      }
+      .shadow-sm, .shadow, .shadow-md, .shadow-lg, .shadow-xl {
+        box-shadow: none !important;
+      }
+      .border {
+        border-color: #D1D5DB !important;
+      }
+    }
+
+    @media screen {
+      .print-only {
+        display: none !important;
+      }
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #FAF7F2;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #CBD5E1;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94A3B8;
+    }
+  </style>
+</head>
+<body class="min-h-full flex flex-col antialiased">
+
+  <!-- ================= HEADER & CLASS SELECTOR BAR ================= -->
+  <header class="bg-[#FFFDF9] border-b border-stone-200 sticky top-0 z-30 shadow-sm no-print">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        
+        <!-- App Title & Academic Badge -->
+        <div class="flex items-center space-x-3 space-x-reverse">
+          <div class="w-11 h-11 rounded-xl bg-maroon-700 text-white flex items-center justify-center text-xl shadow-md font-bold">
+            <i class="fa-solid fa-graduation-cap"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h1 class="text-lg sm:text-xl font-extrabold tracking-tight text-maroon-900">Classroom Tracker</h1>
+              <span class="bg-maroon-100 text-maroon-800 text-[11px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                EDU PRO
+              </span>
+            </div>
+            <p class="text-xs text-stone-500 font-medium">Seating, Attendance, Assessment & Quiz Studio</p>
+          </div>
+        </div>
+
+        <!-- Class Selector & Quick Action Controls -->
+        <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+          
+          <!-- Multi-Class Switcher Dropdown -->
+          <div class="relative min-w-[200px] sm:min-w-[240px]">
+            <select id="class-select" onchange="switchClass(this.value)" class="w-full bg-[#FAF7F2] border border-stone-300 text-stone-800 text-xs sm:text-sm rounded-lg px-3 py-2 font-semibold focus:ring-2 focus:ring-maroon-600 focus:outline-none cursor-pointer">
+              <!-- Dynamically populated -->
+            </select>
+          </div>
+
+          <!-- Add Class Button -->
+          <button onclick="openNewClassModal()" class="bg-maroon-700 hover:bg-maroon-800 text-white text-xs font-bold px-3 py-2 rounded-lg transition shadow-xs flex items-center gap-1.5" title="Add New Class">
+            <i class="fa-solid fa-plus"></i>
+            <span class="hidden sm:inline">New Class</span>
+          </button>
+
+          <!-- Delete Class Button -->
+          <button onclick="confirmDeleteClass()" class="bg-stone-100 hover:bg-rose-100 text-stone-600 hover:text-rose-700 text-xs font-bold px-2.5 py-2 rounded-lg border border-stone-200 transition" title="Delete Active Class">
+            <i class="fa-solid fa-trash-can"></i>
+          </button>
+
+          <div class="h-5 w-px bg-stone-300 hidden sm:block mx-0.5"></div>
+
+          <!-- JSON Export Button -->
+          <button onclick="exportJSONBackup()" class="bg-slateBlue-500 hover:bg-slateBlue-600 text-white text-xs font-bold px-3 py-2 rounded-lg transition shadow-xs flex items-center gap-1.5" title="Export Backup JSON">
+            <i class="fa-solid fa-download"></i>
+            <span class="hidden md:inline">Export JSON</span>
+          </button>
+
+          <!-- JSON Import Button -->
+          <label class="bg-stone-200 hover:bg-stone-300 text-stone-700 text-xs font-bold px-3 py-2 rounded-lg transition cursor-pointer flex items-center gap-1.5" title="Import JSON Backup">
+            <i class="fa-solid fa-upload"></i>
+            <span class="hidden md:inline">Import</span>
+            <input type="file" id="json-import-file" accept=".json" onchange="importJSONBackup(event)" class="hidden" />
+          </label>
+
+          <!-- Print Class Sheet Button -->
+          <button onclick="triggerPrintView()" class="bg-stone-800 hover:bg-black text-white text-xs font-bold px-3 py-2 rounded-lg transition shadow-xs flex items-center gap-1.5" title="Print Academic Sheet">
+            <i class="fa-solid fa-print"></i>
+            <span class="hidden lg:inline">Print Sheet</span>
+          </button>
+
+        </div>
+
+      </div>
+
+      <!-- MAIN TAB NAVIGATION BAR -->
+      <nav class="flex items-center space-x-2 space-x-reverse mt-4 overflow-x-auto pb-1 font-semibold text-xs border-t border-stone-100 pt-2">
+        <button onclick="switchTab('roster')" id="tab-btn-roster" class="px-4 py-2 rounded-lg transition flex items-center gap-2 whitespace-nowrap bg-maroon-700 text-white font-bold shadow-xs">
+          <i class="fa-solid fa-users"></i>
+          <span>1. Roster, Attendance & Grades</span>
+        </button>
+
+        <button onclick="switchTab('seating')" id="tab-btn-seating" class="px-4 py-2 rounded-lg transition flex items-center gap-2 whitespace-nowrap bg-stone-100 text-stone-600 hover:bg-stone-200">
+          <i class="fa-solid fa-chair text-slateBlue-500"></i>
+          <span>2. Smart Seating & Groups</span>
+        </button>
+
+        <button onclick="switchTab('quiz')" id="tab-btn-quiz" class="px-4 py-2 rounded-lg transition flex items-center gap-2 whitespace-nowrap bg-stone-100 text-stone-600 hover:bg-stone-200">
+          <i class="fa-solid fa-circle-question text-amber-600"></i>
+          <span>3. Quiz & Drill Studio</span>
+        </button>
+
+        <button onclick="switchTab('print')" id="tab-btn-print" class="px-4 py-2 rounded-lg transition flex items-center gap-2 whitespace-nowrap bg-stone-100 text-stone-600 hover:bg-stone-200">
+          <i class="fa-solid fa-file-invoice text-emerald-600"></i>
+          <span>4. Print-Ready Report</span>
+        </button>
+      </nav>
+
+    </div>
+  </header>
+
+  <!-- ================= MAIN CONTENT CONTAINER ================= -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full no-print">
+
+    <!-- =================================================================== -->
+    <!-- TAB 1: ROSTER, ATTENDANCE & GRADES                                  -->
+    <!-- =================================================================== -->
+    <section id="tab-content-roster" class="space-y-6">
+      
+      <!-- Summary KPI Bar -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        
+        <!-- Total Students -->
+        <div class="bg-[#FFFDF9] p-4 rounded-xl border border-stone-200 shadow-xs flex items-center space-x-3 space-x-reverse">
+          <div class="w-10 h-10 rounded-lg bg-maroon-100 text-maroon-700 flex items-center justify-center text-lg">
+            <i class="fa-solid fa-user-graduate"></i>
+          </div>
+          <div>
+            <p class="text-xs text-stone-500 font-medium">Total Students</p>
+            <p id="kpi-total-students" class="text-xl font-extrabold text-stone-800">0</p>
+          </div>
+        </div>
+
+        <!-- Attendance Rate -->
+        <div class="bg-[#FFFDF9] p-4 rounded-xl border border-stone-200 shadow-xs flex items-center space-x-3 space-x-reverse">
+          <div class="w-10 h-10 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center text-lg">
+            <i class="fa-solid fa-clipboard-user"></i>
+          </div>
+          <div>
+            <p class="text-xs text-stone-500 font-medium">Attendance Rate</p>
+            <p id="kpi-attendance-rate" class="text-xl font-extrabold text-emerald-700">0%</p>
+          </div>
+        </div>
+
+        <!-- Class Average -->
+        <div class="bg-[#FFFDF9] p-4 rounded-xl border border-stone-200 shadow-xs flex items-center space-x-3 space-x-reverse">
+          <div class="w-10 h-10 rounded-lg bg-slateBlue-100 text-slateBlue-600 flex items-center justify-center text-lg">
+            <i class="fa-solid fa-chart-line"></i>
+          </div>
+          <div>
+            <p class="text-xs text-stone-500 font-medium">Class Average</p>
+            <p id="kpi-class-average" class="text-xl font-extrabold text-slateBlue-700">0/100</p>
+          </div>
+        </div>
+
+        <!-- Top Performer -->
+        <div class="bg-[#FFFDF9] p-4 rounded-xl border border-stone-200 shadow-xs flex items-center space-x-3 space-x-reverse">
+          <div class="w-10 h-10 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center text-lg">
+            <i class="fa-solid fa-award"></i>
+          </div>
+          <div class="overflow-hidden">
+            <p class="text-xs text-stone-500 font-medium">Top Performer</p>
+            <p id="kpi-top-performer" class="text-sm font-extrabold text-stone-800 truncate">None</p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Add Student & Search Bar Card -->
+      <div class="bg-[#FFFDF9] p-5 rounded-2xl border border-stone-200 shadow-sm space-y-4">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-stone-100 pb-4">
+          <div>
+            <h2 class="text-sm font-bold text-maroon-900 uppercase tracking-wider flex items-center gap-2">
+              <i class="fa-solid fa-user-plus text-maroon-700"></i>
+              Add New Student Entry
+            </h2>
+            <p class="text-xs text-stone-500">Register new students directly into the class ledger.</p>
+          </div>
+          
+          <!-- Search & Filter Control -->
+          <div class="flex flex-wrap items-center gap-2">
+            <div class="relative">
+              <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-stone-400 text-xs"></i>
+              <input 
+                type="text" 
+                id="search-student-input" 
+                oninput="renderRosterTable()" 
+                placeholder="Search name or ID..." 
+                class="bg-[#FAF7F2] border border-stone-300 text-xs rounded-lg pl-8 pr-3 py-1.5 w-48 focus:ring-2 focus:ring-maroon-600 focus:outline-none"
+              />
+            </div>
+            
+            <select id="filter-grade-select" onchange="renderRosterTable()" class="bg-[#FAF7F2] border border-stone-300 text-xs rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-maroon-600 focus:outline-none">
+              <option value="ALL">All Grades</option>
+              <option value="A">Grade A (75-100)</option>
+              <option value="B">Grade B (65-74)</option>
+              <option value="C">Grade C (50-64)</option>
+              <option value="D">Grade D (40-49)</option>
+              <option value="F">Grade F (&lt;40)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Form Inputs Grid -->
+        <form onsubmit="handleAddStudent(event)" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-stone-600 mb-1">Full Student Name *</label>
+            <input type="text" id="new-student-name" required placeholder="e.g. Amina Yusuf" class="w-full bg-[#FAF7F2] border border-stone-300 rounded-lg px-3 py-1.5 text-xs focus:ring-2 focus:ring-maroon-600 focus:outline-none" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-stone-600 mb-1">Admission / Roll ID *</label>
+            <input type="text" id="new-student-roll" required placeholder="e.g. SCI-009" class="w-full bg-[#FAF7F2] border border-stone-300 rounded-lg px-3 py-1.5 text-xs focus:ring-2 focus:ring-maroon-600 focus:outline-none" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-stone-600 mb-1">Gender / Tag</label>
+            <select id="new-student-gender" class="w-full bg-[#FAF7F2] border border-stone-300 rounded-lg px-3 py-1.5 text-xs focus:ring-2 focus:ring-maroon-600 focus:outline-none">
+              <option value="F">Female (F)</option>
+              <option value="M">Male (M)</option>
+            </select>
+          </div>
+
+          <div class="flex items-end">
+            <button type="submit" class="w-full bg-maroon-700 hover:bg-maroon-800 text-white font-bold text-xs py-2 rounded-lg transition shadow-xs flex items-center justify-center gap-1.5">
+              <i class="fa-solid fa-plus-circle"></i>
+              Add Student
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Interactive Roster & Gradebook Table -->
+      <div class="bg-[#FFFDF9] rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
+        <div class="p-4 border-b border-stone-200 flex items-center justify-between">
+          <h3 class="text-xs font-bold text-stone-700 uppercase tracking-wider flex items-center gap-2">
+            <i class="fa-solid fa-table text-slateBlue-500"></i>
+            Class Ledger & Continuous Assessment
+          </h3>
+          <span class="text-xs text-stone-500 font-medium">CA1 (20) + CA2 (20) + Exam (60) = Total (100)</span>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr class="bg-[#FAF7F2] text-stone-600 font-bold border-b border-stone-200">
+                <th class="py-3 px-3">Roll ID</th>
+                <th class="py-3 px-3">Student Name</th>
+                <th class="py-3 px-3 text-center">Attendance</th>
+                <th class="py-3 px-3 text-center w-20">CA 1 (20)</th>
+                <th class="py-3 px-3 text-center w-20">CA 2 (20)</th>
+                <th class="py-3 px-3 text-center w-24">Exam (60)</th>
+                <th class="py-3 px-3 text-center">Total (/100)</th>
+                <th class="py-3 px-3 text-center">Grade</th>
+                <th class="py-3 px-3">Remark</th>
+                <th class="py-3 px-2 text-center">Action</th>
+              </tr>
+            </thead>
+            <tbody id="roster-tbody" class="divide-y divide-stone-100">
+              <!-- Dynamically populated roster rows -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- TAB 2: SMART SEATING & GROUP GENERATOR                              -->
+    <!-- =================================================================== -->
+    <section id="tab-content-seating" class="space-y-6 hidden">
+      
+      <!-- Seating Controls & Config Toolbar -->
+      <div class="bg-[#FFFDF9] p-5 rounded-2xl border border-stone-200 shadow-sm space-y-4">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-stone-100 pb-4">
+          <div>
+            <h2 class="text-sm font-bold text-maroon-900 uppercase tracking-wider flex items-center gap-2">
+              <i class="fa-solid fa-cubes text-slateBlue-500"></i>
+              Smart Layout & Collaborative Group Studio
+            </h2>
+            <p class="text-xs text-stone-500">Arrange classroom desks or form balanced study groups with pinned desk persistence.</p>
+          </div>
+
+          <!-- Controls Button Toolbar -->
+          <div class="flex flex-wrap items-center gap-2">
+            
+            <!-- Mode Toggle -->
+            <div class="bg-stone-200 p-1 rounded-lg flex items-center text-xs font-bold">
+              <button onclick="setSeatingMode('grid')" id="mode-btn-grid" class="px-3 py-1 rounded-md bg-white text-maroon-800 shadow-xs">
+                <i class="fa-solid fa-border-all mr-1"></i> Grid Rows
+              </button>
+              <button onclick="setSeatingMode('groups')" id="mode-btn-groups" class="px-3 py-1 rounded-md text-stone-600 hover:text-stone-900">
+                <i class="fa-solid fa-people-group mr-1"></i> Groups
+              </button>
+            </div>
+
+            <!-- Columns / Group Size Select -->
+            <div class="flex items-center gap-1.5 text-xs font-semibold text-stone-700 bg-[#FAF7F2] border border-stone-300 rounded-lg px-2.5 py-1">
+              <span id="layout-size-label">Columns:</span>
+              <select id="layout-size-select" onchange="updateLayoutSize(this.value)" class="bg-transparent font-bold focus:outline-none">
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4" selected>4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+              </select>
+            </div>
+
+            <!-- Shuffle Button -->
+            <button onclick="shuffleSeatingLayout()" class="bg-maroon-700 hover:bg-maroon-800 text-white font-bold text-xs px-3.5 py-1.5 rounded-lg transition shadow-xs flex items-center gap-1.5">
+              <i class="fa-solid fa-shuffle"></i>
+              <span>Shuffle Unpinned</span>
+            </button>
+
+            <!-- Clear Layout -->
+            <button onclick="clearSeatingAssignments()" class="bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs px-3 py-1.5 rounded-lg border border-stone-200 transition">
+              <i class="fa-solid fa-rotate-left"></i>
+            </button>
+
+          </div>
+        </div>
+
+        <!-- Legend Bar -->
+        <div class="flex flex-wrap items-center justify-between gap-2 text-xs font-medium text-stone-500">
+          <div class="flex items-center gap-4">
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Present (P)</span>
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Late (L)</span>
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span> Absent (A)</span>
+            <span class="flex items-center gap-1.5"><i class="fa-solid fa-thumbtack text-amber-600"></i> Pinned Seat</span>
+          </div>
+          <span id="unassigned-count-badge" class="text-maroon-700 font-bold bg-maroon-50 px-2 py-0.5 rounded border border-maroon-100">
+            Unassigned: 0
+          </span>
+        </div>
+      </div>
+
+      <!-- VISUAL FRONT-OF-CLASSROOM CANVAS -->
+      <div class="bg-[#FFFDF9] p-6 rounded-2xl border border-stone-200 shadow-sm space-y-6 min-h-[400px]">
+        
+        <!-- Whiteboard / Teacher Desk Banner -->
+        <div class="w-full bg-gradient-to-r from-stone-800 via-stone-700 to-stone-800 text-white rounded-xl py-3 px-4 text-center font-bold text-xs uppercase tracking-widest shadow-md flex items-center justify-center gap-3">
+          <i class="fa-solid fa-chalkboard"></i>
+          <span>FRONT OF CLASSROOM — WHITEBOARD / TEACHER DESK</span>
+          <i class="fa-solid fa-chalkboard"></i>
+        </div>
+
+        <!-- Dynamic Grid / Group Canvas Container -->
+        <div id="seating-canvas-grid" class="transition-all duration-300">
+          <!-- Dynamically populated desk/group cards -->
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- TAB 3: CLASSROOM QUIZ & DRILL STUDIO                                -->
+    <!-- =================================================================== -->
+    <section id="tab-content-quiz" class="space-y-6 hidden">
+      
+      <!-- Studio Header & Sub-Mode Switcher -->
+      <div class="bg-[#FFFDF9] p-5 rounded-2xl border border-stone-200 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h2 class="text-sm font-bold text-maroon-900 uppercase tracking-wider flex items-center gap-2">
+            <i class="fa-solid fa-circle-question text-amber-600"></i>
+            Interactive Classroom Quiz & Drill Studio
+          </h2>
+          <p class="text-xs text-stone-500">Run quick oral drills or multiple-choice questions with random student selection and bonus points.</p>
+        </div>
+
+        <div class="bg-stone-200 p-1 rounded-lg flex items-center text-xs font-bold">
+          <button onclick="setQuizSubMode('runner')" id="quiz-submode-btn-runner" class="px-4 py-1.5 rounded-md bg-white text-maroon-800 shadow-xs">
+            <i class="fa-solid fa-play mr-1.5 text-emerald-600"></i> Live Drill Runner
+          </button>
+          <button onclick="setQuizSubMode('bank')" id="quiz-submode-btn-bank" class="px-4 py-1.5 rounded-md text-stone-600 hover:text-stone-900">
+            <i class="fa-solid fa-list-check mr-1.5 text-slateBlue-500"></i> Question Bank Manager
+          </button>
+        </div>
+      </div>
+
+      <!-- SUB-MODE 1: LIVE QUIZ RUNNER -->
+      <div id="quiz-runner-container" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Left Column: Student Selector & Spotlight (4 cols) -->
+        <div class="lg:col-span-4 space-y-4">
+          <div class="bg-[#FFFDF9] p-5 rounded-2xl border border-stone-200 shadow-sm space-y-4">
+            <h3 class="text-xs font-bold text-stone-700 uppercase tracking-wider flex items-center gap-2">
+              <i class="fa-solid fa-user-check text-slateBlue-500"></i>
+              Active Student Selection
+            </h3>
+
+            <!-- Student Picker Dropdown -->
+            <div>
+              <label class="block text-xs font-semibold text-stone-600 mb-1">Select Student to Answer</label>
+              <select id="quiz-student-select" onchange="handleSelectQuizStudent(this.value)" class="w-full bg-[#FAF7F2] border border-stone-300 text-xs font-bold rounded-lg px-3 py-2 text-stone-800 focus:ring-2 focus:ring-maroon-600 focus:outline-none">
+                <!-- Dynamically populated -->
+              </select>
+            </div>
+
+            <!-- Random Picker Button -->
+            <button onclick="pickRandomPresentStudent()" class="w-full bg-slateBlue-500 hover:bg-slateBlue-600 text-white font-bold text-xs py-2.5 rounded-lg transition shadow-xs flex items-center justify-center gap-2">
+              <i class="fa-solid fa-dice"></i>
+              <span>Random Student Picker</span>
+            </button>
+
+            <!-- Spotlight Card -->
+            <div id="quiz-spotlight-card" class="bg-[#FAF7F2] p-4 rounded-xl border border-stone-200 text-center space-y-2">
+              <div class="w-12 h-12 mx-auto rounded-full bg-maroon-100 text-maroon-700 flex items-center justify-center text-xl font-extrabold">
+                <i class="fa-solid fa-user"></i>
+              </div>
+              <div>
+                <p id="spotlight-student-name" class="font-extrabold text-sm text-stone-800">Select a Student</p>
+                <p id="spotlight-student-roll" class="text-xs text-stone-500">No active turn</p>
+              </div>
+              <div id="spotlight-bonus-badge" class="pt-1">
+                <span class="text-[10px] font-bold bg-amber-100 text-amber-800 px-2.5 py-0.5 rounded-full border border-amber-200">
+                  Ready for question
+                </span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Right Column: Interactive Question Stage (8 cols) -->
+        <div class="lg:col-span-8 space-y-4">
+          <div class="bg-[#FFFDF9] p-6 rounded-2xl border border-stone-200 shadow-sm space-y-6">
+            
+            <!-- Question Navigation Header -->
+            <div class="flex items-center justify-between border-b border-stone-200 pb-4">
+              <span id="quiz-step-indicator" class="text-xs font-bold text-slateBlue-600 font-mono">
+                Question 1 of 1
+              </span>
+
+              <div class="flex items-center gap-2">
+                <button onclick="navigateQuizQuestion(-1)" class="bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-bold px-3 py-1.5 rounded-lg border border-stone-200 transition">
+                  <i class="fa-solid fa-chevron-left"></i> Prev
+                </button>
+                <button onclick="navigateQuizQuestion(1)" class="bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-bold px-3 py-1.5 rounded-lg border border-stone-200 transition">
+                  Next <i class="fa-solid fa-chevron-right"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Active Question Text Card -->
+            <div class="bg-[#FAF7F2] p-5 rounded-xl border border-stone-200 space-y-2">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-maroon-700 bg-maroon-50 px-2 py-0.5 rounded border border-maroon-100">
+                Multiple Choice
+              </span>
+              <h3 id="quiz-question-text" class="text-base font-extrabold text-stone-800 leading-snug">
+                Loading question...
+              </h3>
+            </div>
+
+            <!-- Options Stack -->
+            <div id="quiz-options-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <!-- Dynamically populated options buttons -->
+            </div>
+
+            <!-- Feedback & Explanation Banner -->
+            <div id="quiz-feedback-box" class="hidden p-4 rounded-xl border space-y-2 transition-all">
+              <div class="flex items-center justify-between">
+                <span id="quiz-feedback-title" class="font-extrabold text-xs uppercase tracking-wider"></span>
+                <button onclick="awardBonusPoint()" id="btn-award-bonus" class="bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs px-3 py-1 rounded-md transition shadow-xs flex items-center gap-1">
+                  <i class="fa-solid fa-star"></i> +2 Bonus to CA1
+                </button>
+              </div>
+              <p id="quiz-explanation-text" class="text-xs leading-relaxed"></p>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+      <!-- SUB-MODE 2: QUESTION BANK MANAGER -->
+      <div id="quiz-bank-container" class="space-y-6 hidden">
+        
+        <!-- Add Question Form Card -->
+        <div class="bg-[#FFFDF9] p-5 rounded-2xl border border-stone-200 shadow-sm space-y-4">
+          <h3 class="text-xs font-bold text-maroon-900 uppercase tracking-wider flex items-center gap-2 border-b border-stone-100 pb-3">
+            <i class="fa-solid fa-plus-circle text-maroon-700"></i>
+            Add New Question to Bank
+          </h3>
+
+          <form onsubmit="handleAddQuestion(event)" class="space-y-4">
+            <div>
+              <label class="block text-xs font-semibold text-stone-600 mb-1">Question Prompt *</label>
+              <input type="text" id="new-q-text" required placeholder="e.g. What organ filters metabolic waste from blood?" class="w-full bg-[#FAF7F2] border border-stone-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-maroon-600 focus:outline-none" />
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-semibold text-stone-600 mb-1">Option A *</label>
+                <input type="text" id="new-q-opt-0" required placeholder="Option A" class="w-full bg-[#FAF7F2] border border-stone-300 rounded-lg px-3 py-1.5 text-xs focus:ring-2 focus:ring-maroon-600 focus:outline-none" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-stone-600 mb-1">Option B *</label>
+                <input type="text" id="new-q-opt-1" required placeholder="Option B" class="w-full bg-[#FAF7F2] border border-stone-300 rounded-lg px-3 py-1.5 text-xs focus:ring-2 focus:ring-maroon-600 focus:outline-none" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-stone-600 mb-1">Option C *</label>
+                <input type="text" id="new-q-opt-2" required placeholder="Option C" class="w-full bg-[#FAF7F2] border border-stone-300 rounded-lg px-3 py-1.5 text-xs focus:ring-2 focus:ring-maroon-600 focus:outline-none" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-stone-600 mb-1">Option D *</label>
+                <input type="text" id="new-q-opt-3" required placeholder="Option D" class="w-full bg-[#FAF7F2] border border-stone-300 rounded-lg px-3 py-1.5 text-xs focus:ring-2 focus:ring-maroon-600 focus:outline-none" />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label class="block text-xs font-semibold text-stone-600 mb-1">Correct Answer *</label>
+                <select id="new-q-correct" class="w-full bg-[#FAF7F2] border border-stone-300 rounded-lg px-3 py-1.5 text-xs font-bold text-stone-800 focus:ring-2 focus:ring-maroon-600 focus:outline-none">
+                  <option value="0">Option A</option>
+                  <option value="1">Option B</option>
+                  <option value="2">Option C</option>
+                  <option value="3">Option D</option>
+                </select>
+              </div>
+
+              <div class="sm:col-span-2">
+                <label class="block text-xs font-semibold text-stone-600 mb-1">Pedagogical Explanation</label>
+                <input type="text" id="new-q-explanation" placeholder="Brief rationale for students" class="w-full bg-[#FAF7F2] border border-stone-300 rounded-lg px-3 py-1.5 text-xs focus:ring-2 focus:ring-maroon-600 focus:outline-none" />
+              </div>
+            </div>
+
+            <div class="pt-2 flex justify-end">
+              <button type="submit" class="bg-maroon-700 hover:bg-maroon-800 text-white font-bold text-xs px-5 py-2 rounded-lg transition shadow-xs flex items-center gap-1.5">
+                <i class="fa-solid fa-save"></i> Save Question
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Question Bank List -->
+        <div class="bg-[#FFFDF9] p-5 rounded-2xl border border-stone-200 shadow-sm space-y-4">
+          <h3 class="text-xs font-bold text-stone-700 uppercase tracking-wider flex items-center gap-2">
+            <i class="fa-solid fa-database text-slateBlue-500"></i>
+            Existing Question Bank
+          </h3>
+
+          <div id="quiz-bank-list" class="space-y-3">
+            <!-- Dynamically populated questions list -->
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- TAB 4: PRINT-READY CLASS SHEET                                      -->
+    <!-- =================================================================== -->
+    <section id="tab-content-print" class="space-y-6 hidden">
+      
+      <div class="bg-[#FFFDF9] p-4 rounded-2xl border border-stone-200 shadow-sm flex items-center justify-between no-print">
+        <p class="text-xs text-stone-600 font-medium">
+          <i class="fa-solid fa-info-circle text-slateBlue-500 mr-1"></i>
+          This view formats automatically for A4 printing. Click <strong>Print Sheet</strong> to generate PDF or hard copy.
+        </p>
+        <button onclick="window.print()" class="bg-maroon-700 hover:bg-maroon-800 text-white text-xs font-bold px-4 py-2 rounded-lg transition shadow-xs flex items-center gap-1.5">
+          <i class="fa-solid fa-print"></i> Print Sheet
+        </button>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ================= PRINT-ONLY FORMAL ACADEMIC REPORT ================= -->
+  <div id="print-sheet-container" class="p-8 max-w-4xl mx-auto bg-white font-sans text-black">
+    <!-- Rendered dynamically by JavaScript -->
+  </div>
+
+  <!-- ================= MODAL: ADD NEW CLASS ================= -->
+  <div id="modal-new-class" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 hidden no-print">
+    <div class="bg-[#FFFDF9] rounded-2xl border border-stone-200 p-6 max-w-md w-full shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-stone-200 pb-3">
+        <h3 class="text-sm font-bold text-maroon-900 uppercase tracking-wider flex items-center gap-2">
+          <i class="fa-solid fa-folder-plus text-maroon-700"></i>
+          Create New Class Section
+        </h3>
+        <button onclick="closeNewClassModal()" class="text-stone-400 hover:text-stone-700">
+          <i class="fa-solid fa-xmark text-base"></i>
+        </button>
+      </div>
+
+      <form onsubmit="handleCreateNewClass(event)" class="space-y-3 text-xs">
+        <div>
+          <label class="block font-semibold text-stone-700 mb-1">Class Title *</label>
+          <input type="text" id="modal-class-title" required placeholder="e.g. SS 2C — Basic Physics" class="w-full bg-[#FAF7F2] border border-stone-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-maroon-600 focus:outline-none" />
+        </div>
+
+        <div>
+          <label class="block font-semibold text-stone-700 mb-1">Subject Name</label>
+          <input type="text" id="modal-class-subject" placeholder="e.g. Physics" class="w-full bg-[#FAF7F2] border border-stone-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-maroon-600 focus:outline-none" />
+        </div>
+
+        <div>
+          <label class="block font-semibold text-stone-700 mb-1">Subject Code</label>
+          <input type="text" id="modal-class-code" placeholder="e.g. PHY-201" class="w-full bg-[#FAF7F2] border border-stone-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-maroon-600 focus:outline-none" />
+        </div>
+
+        <div class="pt-2 flex items-center justify-end gap-2">
+          <button type="button" onclick="closeNewClassModal()" class="bg-stone-200 text-stone-700 font-bold px-4 py-2 rounded-lg">Cancel</button>
+          <button type="submit" class="bg-maroon-700 hover:bg-maroon-800 text-white font-bold px-4 py-2 rounded-lg shadow-xs">Create Class</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION STACK -->
+  <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none no-print"></div>
+
+  <!-- ================= APPLICATION JAVASCRIPT LOGIC ================= -->
+  <script>
+    /* ==========================================================================
+       1. DEFAULT PRE-SEEDED DATA
+       ========================================================================== */
+    const DEFAULT_STATE = {
+      activeClassId: 'class_1',
+      classes: [
+        {
+          id: 'class_1',
+          name: 'JSS 2A — Integrated Science',
+          subject: 'Integrated Science',
+          code: 'SCI-201',
+          term: 'First Term 2026/2027',
+          students: [
+            { id: 's101', rollId: 'SCI-001', name: 'Amina Yusuf', gender: 'F', attendance: 'P', ca1: 18, ca2: 17, exam: 52, pinnedSeat: null },
+            { id: 's102', rollId: 'SCI-002', name: 'Chidi Okonkwo', gender: 'M', attendance: 'P', ca1: 15, ca2: 16, exam: 48, pinnedSeat: null },
+            { id: 's103', rollId: 'SCI-003', name: 'Fatima Bello', gender: 'F', attendance: 'L', ca1: 19, ca2: 18, exam: 55, pinnedSeat: null },
+            { id: 's104', rollId: 'SCI-004', name: 'David Adebayo', gender: 'M', attendance: 'P', ca1: 12, ca2: 14, exam: 38, pinnedSeat: null },
+            { id: 's105', rollId: 'SCI-005', name: 'Zainab Ibrahim', gender: 'F', attendance: 'P', ca1: 20, ca2: 19, exam: 58, pinnedSeat: null },
+            { id: 's106', rollId: 'SCI-006', name: 'Emeka Nwosu', gender: 'M', attendance: 'A', ca1: 10, ca2: 12, exam: 32, pinnedSeat: null },
+            { id: 's107', rollId: 'SCI-007', name: 'Aisha Mohammed', gender: 'F', attendance: 'P', ca1: 16, ca2: 15, exam: 45, pinnedSeat: null },
+            { id: 's108', rollId: 'SCI-008', name: 'Tunde Bakare', gender: 'M', attendance: 'P', ca1: 14, ca2: 13, exam: 41, pinnedSeat: null }
+          ],
+          seating: {
+            mode: 'grid', // 'grid' | 'groups'
+            cols: 4,
+            groupSize: 4,
+            deskAssignments: { 0: 's101', 1: 's102', 2: 's103', 3: 's104', 4: 's105', 5: 's106', 6: 's107', 7: 's108' }
+          },
+          quizzes: [
+            {
+              id: 'q1',
+              question: 'What is the primary gas required for photosynthesis in green plants?',
+              options: ['Oxygen', 'Carbon Dioxide', 'Nitrogen', 'Hydrogen'],
+              correctIndex: 1,
+              explanation: 'Plants take in Carbon Dioxide (CO2) through stomata during photosynthesis to produce glucose and release oxygen.'
+            },
+            {
+              id: 'q2',
+              question: 'Which element has the chemical symbol "Fe"?',
+              options: ['Fluorine', 'Iron', 'Francium', 'Lead'],
+              correctIndex: 1,
+              explanation: '"Fe" originates from the Latin word for iron, Ferrum.'
+            },
+            {
+              id: 'q3',
+              question: 'What organ in the human body filters metabolic waste from blood to form urine?',
+              options: ['Liver', 'Heart', 'Kidneys', 'Lungs'],
+              correctIndex: 2,
+              explanation: 'The kidneys filter blood through nephrons, removing metabolic waste and regulating electrolyte balance.'
+            }
+          ]
+        },
+        {
+          id: 'class_2',
+          name: 'SS 1B — Arabic & Literature',
+          subject: 'Arabic & Literature',
+          code: 'ARB-101',
+          term: 'First Term 2026/2027',
+          students: [
+            { id: 's201', rollId: 'ARB-001', name: 'Bilal Hassan', gender: 'M', attendance: 'P', ca1: 19, ca2: 18, exam: 54, pinnedSeat: null },
+            { id: 's202', rollId: 'ARB-002', name: 'Maryam Abubakar', gender: 'F', attendance: 'P', ca1: 17, ca2: 19, exam: 56, pinnedSeat: null },
+            { id: 's203', rollId: 'ARB-003', name: 'Usman Ali', gender: 'M', attendance: 'P', ca1: 14, ca2: 15, exam: 42, pinnedSeat: null },
+            { id: 's204', rollId: 'ARB-004', name: 'Khadija Umar', gender: 'F', attendance: 'L', ca1: 18, ca2: 16, exam: 50, pinnedSeat: null },
+            { id: 's205', rollId: 'ARB-005', name: 'Ibrahim Danjuma', gender: 'M', attendance: 'P', ca1: 11, ca2: 12, exam: 35, pinnedSeat: null },
+            { id: 's206', rollId: 'ARB-006', name: 'Sumayya Said', gender: 'F', attendance: 'P', ca1: 20, ca2: 20, exam: 59, pinnedSeat: null }
+          ],
+          seating: {
+            mode: 'grid',
+            cols: 3,
+            groupSize: 3,
+            deskAssignments: { 0: 's201', 1: 's202', 2: 's203', 3: 's204', 4: 's205', 5: 's206' }
+          },
+          quizzes: [
+            {
+              id: 'q201',
+              question: 'What classical Arabic literary meter (Bahr) is predominantly used in solemn panegyrics and Mu‘allaqāt?',
+              options: ['Al-Tawīl', 'Al-Basīt', 'Al-Wāfir', 'Al-Kāmil'],
+              correctIndex: 0,
+              explanation: 'Bahr al-Tawīl (الطويل) is the most prominent classical meter in pre-Islamic Arabic poetry.'
+            }
+          ]
+        }
+      ]
+    };
+
+    /* ==========================================================================
+       2. GLOBAL STATE & PERSISTENCE
+       ========================================================================== */
+    let appState = loadState();
+    let currentTab = 'roster';
+    let currentQuizSubMode = 'runner'; // 'runner' | 'bank'
+    let activeQuizIndex = 0;
+    let activeQuizStudentId = null;
+
+    function loadState() {
+      try {
+        const saved = localStorage.getItem('CLASSROOM_TRACKER_STATE_V1');
+        return saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(DEFAULT_STATE));
+      } catch (e) {
+        console.error("Failed to load localStorage:", e);
+        return JSON.parse(JSON.stringify(DEFAULT_STATE));
+      }
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem('CLASSROOM_TRACKER_STATE_V1', JSON.stringify(appState));
+      } catch (e) {
+        console.error("Failed to save state:", e);
+      }
+    }
+
+    function getActiveClass() {
+      let cls = appState.classes.find(c => c.id === appState.activeClassId);
+      if (!cls && appState.classes.length > 0) {
+        appState.activeClassId = appState.classes[0].id;
+        cls = appState.classes[0];
+      }
+      return cls;
+    }
+
+    /* Toast Notification Helper */
+    function showToast(msg, type = 'info') {
+      const container = document.getElementById('toast-container');
+      if (!container) return;
+
+      const toast = document.createElement('div');
+      toast.className = `pointer-events-auto flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-2xl border text-xs font-semibold transition-all duration-300 transform translate-y-2 opacity-0 bg-[#FFFDF9] ${
+        type === 'success' 
+          ? 'text-emerald-800 border-emerald-300' 
+          : type === 'warning'
+          ? 'text-amber-800 border-amber-300'
+          : 'text-maroon-900 border-maroon-200'
+      }`;
+
+      toast.innerHTML = `
+        <i class="fa-solid ${type === 'success' ? 'fa-circle-check text-emerald-600' : 'fa-circle-info text-maroon-700'} text-base"></i>
+        <span>${msg}</span>
+      `;
+
+      container.appendChild(toast);
+
+      requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      });
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
+    /* ==========================================================================
+       3. NAVIGATION & CLASS SWITCHING
+       ========================================================================== */
+    function switchTab(tabId) {
+      currentTab = tabId;
+      const tabs = ['roster', 'seating', 'quiz', 'print'];
+      
+      tabs.forEach(t => {
+        const contentEl = document.getElementById(`tab-content-${t}`);
+        const btnEl = document.getElementById(`tab-btn-${t}`);
+        if (t === tabId) {
+          contentEl.classList.remove('hidden');
+          btnEl.className = 'px-4 py-2 rounded-lg transition flex items-center gap-2 whitespace-nowrap bg-maroon-700 text-white font-bold shadow-xs';
+        } else {
+          contentEl.classList.add('hidden');
+          btnEl.className = 'px-4 py-2 rounded-lg transition flex items-center gap-2 whitespace-nowrap bg-stone-100 text-stone-600 hover:bg-stone-200';
+        }
+      });
+
+      if (tabId === 'seating') renderSeatingCanvas();
+      if (tabId === 'quiz') renderQuizStudio();
+      if (tabId === 'print') renderPrintReadySheet();
+    }
+
+    function renderClassDropdown() {
+      const select = document.getElementById('class-select');
+      select.innerHTML = appState.classes.map(c => `
+        <option value="${c.id}" ${c.id === appState.activeClassId ? 'selected' : ''}>
+          ${c.name} (${c.students.length} Students)
+        </option>
+      `).join('');
+    }
+
+    function switchClass(classId) {
+      appState.activeClassId = classId;
+      saveState();
+      activeQuizIndex = 0;
+      activeQuizStudentId = null;
+      renderAllViews();
+      showToast(`Switched to ${getActiveClass().name}`, 'info');
+    }
+
+    function openNewClassModal() {
+      document.getElementById('modal-new-class').classList.remove('hidden');
+    }
+
+    function closeNewClassModal() {
+      document.getElementById('modal-new-class').classList.add('hidden');
+    }
+
+    function handleCreateNewClass(e) {
+      e.preventDefault();
+      const title = document.getElementById('modal-class-title').value.trim();
+      const subject = document.getElementById('modal-class-subject').value.trim() || 'General';
+      const code = document.getElementById('modal-class-code').value.trim() || 'GEN-101';
+
+      const newClass = {
+        id: 'class_' + Date.now(),
+        name: title,
+        subject: subject,
+        code: code,
+        term: 'First Term 2026/2027',
+        students: [],
+        seating: { mode: 'grid', cols: 4, groupSize: 4, deskAssignments: {} },
+        quizzes: []
+      };
+
+      appState.classes.push(newClass);
+      appState.activeClassId = newClass.id;
+      saveState();
+
+      closeNewClassModal();
+      document.getElementById('modal-class-title').value = '';
+      renderClassDropdown();
+      renderAllViews();
+      showToast(`Created class "${title}"`, 'success');
+    }
+
+    function confirmDeleteClass() {
+      const activeClass = getActiveClass();
+      if (appState.classes.length <= 1) {
+        showToast("At least one active class section is required.", "warning");
+        return;
+      }
+
+      if (confirm(`Are you sure you want to delete "${activeClass.name}" and all associated student records?`)) {
+        appState.classes = appState.classes.filter(c => c.id !== activeClass.id);
+        appState.activeClassId = appState.classes[0].id;
+        saveState();
+        renderClassDropdown();
+        renderAllViews();
+        showToast("Class deleted successfully.", "info");
+      }
+    }
+
+    /* JSON Backup & Restore */
+    function exportJSONBackup() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appState, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `Classroom_Tracker_Backup_${new Date().toISOString().split('T')[0]}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+      showToast("Exported backup JSON file.", "success");
+    }
+
+    function importJSONBackup(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const parsed = JSON.parse(e.target.result);
+          if (parsed && Array.isArray(parsed.classes)) {
+            appState = parsed;
+            saveState();
+            renderClassDropdown();
+            renderAllViews();
+            showToast("Successfully restored data from JSON!", "success");
+          } else {
+            showToast("Invalid JSON backup structure.", "warning");
+          }
+        } catch (err) {
+          showToast("Error reading JSON file.", "warning");
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function triggerPrintView() {
+      switchTab('print');
+      setTimeout(() => {
+        window.print();
+      }, 300);
+    }
+
+    /* ==========================================================================
+       4. TAB 1: ROSTER, ATTENDANCE & GRADES ENGINE
+       ========================================================================== */
+    function calculateGradeAndRemark(total) {
+      if (total >= 75) return { grade: 'A', remark: 'Excellent' };
+      if (total >= 65) return { grade: 'B', remark: 'Very Good' };
+      if (total >= 50) return { grade: 'C', remark: 'Good / Credit' };
+      if (total >= 40) return { grade: 'D', remark: 'Pass' };
+      return { grade: 'F', remark: 'Needs Improvement' };
+    }
+
+    function handleAddStudent(e) {
+      e.preventDefault();
+      const cls = getActiveClass();
+      const name = document.getElementById('new-student-name').value.trim();
+      const roll = document.getElementById('new-student-roll').value.trim();
+      const gender = document.getElementById('new-student-gender').value;
+
+      if (!name || !roll) return;
+
+      const newStudent = {
+        id: 's_' + Date.now(),
+        rollId: roll,
+        name: name,
+        gender: gender,
+        attendance: 'P',
+        ca1: 0,
+        ca2: 0,
+        exam: 0,
+        pinnedSeat: null
+      };
+
+      cls.students.push(newStudent);
+
+      // Assign to first available desk
+      let deskIdx = 0;
+      while (cls.seating.deskAssignments[deskIdx]) {
+        deskIdx++;
+      }
+      cls.seating.deskAssignments[deskIdx] = newStudent.id;
+
+      saveState();
+
+      document.getElementById('new-student-name').value = '';
+      document.getElementById('new-student-roll').value = '';
+
+      renderRosterView();
+      renderClassDropdown();
+      showToast(`Added ${name} (${roll})`, 'success');
+    }
+
+    function deleteStudent(studentId) {
+      const cls = getActiveClass();
+      const st = cls.students.find(s => s.id === studentId);
+      if (!st) return;
+
+      if (confirm(`Remove ${st.name} from the class ledger?`)) {
+        cls.students = cls.students.filter(s => s.id !== studentId);
+        
+        // Remove from seating desk
+        Object.keys(cls.seating.deskAssignments).forEach(key => {
+          if (cls.seating.deskAssignments[key] === studentId) {
+            delete cls.seating.deskAssignments[key];
+          }
+        });
+
+        saveState();
+        renderRosterView();
+        renderClassDropdown();
+        showToast("Student removed.", "info");
+      }
+    }
+
+    function updateStudentAttendance(studentId, status) {
+      const cls = getActiveClass();
+      const st = cls.students.find(s => s.id === studentId);
+      if (st) {
+        st.attendance = status;
+        saveState();
+        renderRosterView();
+      }
+    }
+
+    function updateStudentScore(studentId, field, val) {
+      const cls = getActiveClass();
+      const st = cls.students.find(s => s.id === studentId);
+      if (!st) return;
+
+      let numVal = parseFloat(val) || 0;
+      if (field === 'ca1') numVal = Math.min(20, Math.max(0, numVal));
+      if (field === 'ca2') numVal = Math.min(20, Math.max(0, numVal));
+      if (field === 'exam') numVal = Math.min(60, Math.max(0, numVal));
+
+      st[field] = numVal;
+      saveState();
+      
+      // Update UI row dynamically
+      const total = st.ca1 + st.ca2 + st.exam;
+      const { grade, remark } = calculateGradeAndRemark(total);
+
+      const totalEl = document.getElementById(`total-${studentId}`);
+      const gradeEl = document.getElementById(`grade-${studentId}`);
+      const remarkEl = document.getElementById(`remark-${studentId}`);
+
+      if (totalEl) totalEl.textContent = total;
+      if (gradeEl) {
+        gradeEl.textContent = grade;
+        gradeEl.className = `py-1 px-2.5 rounded-full text-center text-xs font-extrabold inline-block ${
+          grade === 'A' ? 'bg-emerald-100 text-emerald-800' :
+          grade === 'B' ? 'bg-sky-100 text-sky-800' :
+          grade === 'C' ? 'bg-amber-100 text-amber-800' :
+          grade === 'D' ? 'bg-orange-100 text-orange-800' :
+          'bg-rose-100 text-rose-800'
+        }`;
+      }
+      if (remarkEl) remarkEl.textContent = remark;
+
+      updateKPIs();
+    }
+
+    function updateKPIs() {
+      const cls = getActiveClass();
+      const totalStudents = cls.students.length;
+
+      document.getElementById('kpi-total-students').textContent = totalStudents;
+
+      if (totalStudents === 0) {
+        document.getElementById('kpi-attendance-rate').textContent = '0%';
+        document.getElementById('kpi-class-average').textContent = '0/100';
+        document.getElementById('kpi-top-performer').textContent = 'None';
+        return;
+      }
+
+      const presentCount = cls.students.filter(s => s.attendance === 'P' || s.attendance === 'L').length;
+      const attendanceRate = Math.round((presentCount / totalStudents) * 100);
+      document.getElementById('kpi-attendance-rate').textContent = `${attendanceRate}%`;
+
+      const totalClassScore = cls.students.reduce((acc, s) => acc + (s.ca1 + s.ca2 + s.exam), 0);
+      const classAvg = Math.round(totalClassScore / totalStudents);
+      document.getElementById('kpi-class-average').textContent = `${classAvg}/100`;
+
+      // Top Performer
+      let topStudent = cls.students[0];
+      let topScore = -1;
+      cls.students.forEach(s => {
+        const score = s.ca1 + s.ca2 + s.exam;
+        if (score > topScore) {
+          topScore = score;
+          topStudent = s;
+        }
+      });
+
+      document.getElementById('kpi-top-performer').textContent = topStudent ? `${topStudent.name} (${topScore})` : 'None';
+    }
+
+    function renderRosterTable() {
+      const cls = getActiveClass();
+      const tbody = document.getElementById('roster-tbody');
+      const searchQuery = (document.getElementById('search-student-input')?.value || '').toLowerCase().trim();
+      const gradeFilter = document.getElementById('filter-grade-select')?.value || 'ALL';
+
+      let filtered = cls.students.filter(s => {
+        const matchesQuery = s.name.toLowerCase().includes(searchQuery) || s.rollId.toLowerCase().includes(searchQuery);
+        const total = s.ca1 + s.ca2 + s.exam;
+        const { grade } = calculateGradeAndRemark(total);
+        const matchesGrade = gradeFilter === 'ALL' || grade === gradeFilter;
+        return matchesQuery && matchesGrade;
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="10" class="py-8 text-center text-stone-400 font-medium">
+              No matching student records found in this class section.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(s => {
+        const total = s.ca1 + s.ca2 + s.exam;
+        const { grade, remark } = calculateGradeAndRemark(total);
+
+        return `
+          <tr class="hover:bg-[#FAF7F2] transition border-b border-stone-100">
+            <td class="py-2.5 px-3 font-mono font-bold text-stone-700">${s.rollId}</td>
+            <td class="py-2.5 px-3">
+              <div class="font-bold text-stone-800">${s.name}</div>
+              <span class="text-[10px] text-stone-400 font-medium">Tag: ${s.gender}</span>
+            </td>
+            <td class="py-2.5 px-3 text-center">
+              <div class="inline-flex rounded-lg p-0.5 bg-stone-100 border border-stone-200">
+                <button onclick="updateStudentAttendance('${s.id}', 'P')" class="px-2 py-0.5 rounded text-[10px] font-bold ${s.attendance === 'P' ? 'bg-emerald-600 text-white' : 'text-stone-600 hover:text-stone-900'}">P</button>
+                <button onclick="updateStudentAttendance('${s.id}', 'L')" class="px-2 py-0.5 rounded text-[10px] font-bold ${s.attendance === 'L' ? 'bg-amber-500 text-white' : 'text-stone-600 hover:text-stone-900'}">L</button>
+                <button onclick="updateStudentAttendance('${s.id}', 'A')" class="px-2 py-0.5 rounded text-[10px] font-bold ${s.attendance === 'A' ? 'bg-rose-600 text-white' : 'text-stone-600 hover:text-stone-900'}">A</button>
+              </div>
+            </td>
+            <td class="py-2.5 px-3 text-center">
+              <input type="number" min="0" max="20" value="${s.ca1}" onchange="updateStudentScore('${s.id}', 'ca1', this.value)" class="w-14 bg-white border border-stone-300 rounded text-center py-1 font-bold focus:ring-1 focus:ring-maroon-600 focus:outline-none" />
+            </td>
+            <td class="py-2.5 px-3 text-center">
+              <input type="number" min="0" max="20" value="${s.ca2}" onchange="updateStudentScore('${s.id}', 'ca2', this.value)" class="w-14 bg-white border border-stone-300 rounded text-center py-1 font-bold focus:ring-1 focus:ring-maroon-600 focus:outline-none" />
+            </td>
+            <td class="py-2.5 px-3 text-center">
+              <input type="number" min="0" max="60" value="${s.exam}" onchange="updateStudentScore('${s.id}', 'exam', this.value)" class="w-16 bg-white border border-stone-300 rounded text-center py-1 font-bold focus:ring-1 focus:ring-maroon-600 focus:outline-none" />
+            </td>
+            <td id="total-${s.id}" class="py-2.5 px-3 text-center font-extrabold text-stone-800 text-sm">${total}</td>
+            <td class="py-2.5 px-3 text-center">
+              <span id="grade-${s.id}" class="py-1 px-2.5 rounded-full text-center text-xs font-extrabold inline-block ${
+                grade === 'A' ? 'bg-emerald-100 text-emerald-800' :
+                grade === 'B' ? 'bg-sky-100 text-sky-800' :
+                grade === 'C' ? 'bg-amber-100 text-amber-800' :
+                grade === 'D' ? 'bg-orange-100 text-orange-800' :
+                'bg-rose-100 text-rose-800'
+              }">${grade}</span>
+            </td>
+            <td id="remark-${s.id}" class="py-2.5 px-3 text-stone-600 font-medium text-xs">${remark}</td>
+            <td class="py-2.5 px-2 text-center">
+              <button onclick="deleteStudent('${s.id}')" class="text-stone-400 hover:text-rose-600 transition p-1">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function renderRosterView() {
+      updateKPIs();
+      renderRosterTable();
+    }
+
+    /* ==========================================================================
+       5. TAB 2: SMART SEATING & GROUP GENERATOR
+       ========================================================================== */
+    function setSeatingMode(mode) {
+      const cls = getActiveClass();
+      cls.seating.mode = mode;
+      saveState();
+
+      const btnGrid = document.getElementById('mode-btn-grid');
+      const btnGroups = document.getElementById('mode-btn-groups');
+      const sizeLabel = document.getElementById('layout-size-label');
+
+      if (mode === 'grid') {
+        btnGrid.className = 'px-3 py-1 rounded-md bg-white text-maroon-800 shadow-xs font-bold';
+        btnGroups.className = 'px-3 py-1 rounded-md text-stone-600 hover:text-stone-900';
+        sizeLabel.textContent = 'Columns:';
+      } else {
+        btnGroups.className = 'px-3 py-1 rounded-md bg-white text-maroon-800 shadow-xs font-bold';
+        btnGrid.className = 'px-3 py-1 rounded-md text-stone-600 hover:text-stone-900';
+        sizeLabel.textContent = 'Group Size:';
+      }
+
+      renderSeatingCanvas();
+    }
+
+    function updateLayoutSize(val) {
+      const cls = getActiveClass();
+      const num = parseInt(val, 10) || 4;
+      if (cls.seating.mode === 'grid') {
+        cls.seating.cols = num;
+      } else {
+        cls.seating.groupSize = num;
+      }
+      saveState();
+      renderSeatingCanvas();
+    }
+
+    function togglePinSeat(studentId) {
+      const cls = getActiveClass();
+      const st = cls.students.find(s => s.id === studentId);
+      if (!st) return;
+
+      if (st.pinnedSeat !== null && st.pinnedSeat !== undefined) {
+        st.pinnedSeat = null;
+        showToast(`Unpinned seat for ${st.name}`, 'info');
+      } else {
+        // Find assigned desk
+        let assignedDesk = null;
+        Object.keys(cls.seating.deskAssignments).forEach(deskIdx => {
+          if (cls.seating.deskAssignments[deskIdx] === studentId) {
+            assignedDesk = parseInt(deskIdx, 10);
+          }
+        });
+        if (assignedDesk !== null) {
+          st.pinnedSeat = assignedDesk;
+          showToast(`Pinned ${st.name} to Seat #${assignedDesk + 1}`, 'success');
+        }
+      }
+      saveState();
+      renderSeatingCanvas();
+    }
+
+    function shuffleSeatingLayout() {
+      const cls = getActiveClass();
+      const allStudents = cls.students;
+      if (allStudents.length === 0) return;
+
+      // Identify pinned vs unpinned students
+      let pinnedMap = {};
+      let unpinnedStudents = [];
+
+      allStudents.forEach(st => {
+        if (st.pinnedSeat !== null && st.pinnedSeat !== undefined) {
+          pinnedMap[st.pinnedSeat] = st.id;
+        } else {
+          unpinnedStudents.push(st);
+        }
+      });
+
+      // Fisher-Yates Shuffle unpinned
+      for (let i = unpinnedStudents.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [unpinnedStudents[i], unpinnedStudents[j]] = [unpinnedStudents[j], unpinnedStudents[i]];
+      }
+
+      // Reconstruct desk assignments
+      let newAssignments = {};
+      let totalSlots = Math.max(allStudents.length, Object.keys(cls.seating.deskAssignments).length);
+      let unpinnedIdx = 0;
+
+      for (let slot = 0; slot < totalSlots; slot++) {
+        if (pinnedMap[slot]) {
+          newAssignments[slot] = pinnedMap[slot];
+        } else if (unpinnedIdx < unpinnedStudents.length) {
+          newAssignments[slot] = unpinnedStudents[unpinnedIdx].id;
+          unpinnedIdx++;
+        }
+      }
+
+      cls.seating.deskAssignments = newAssignments;
+      saveState();
+      renderSeatingCanvas();
+      showToast("Shuffled unpinned student seating positions!", "success");
+    }
+
+    function clearSeatingAssignments() {
+      const cls = getActiveClass();
+      cls.seating.deskAssignments = {};
+      cls.students.forEach(s => s.pinnedSeat = null);
+      saveState();
+      renderSeatingCanvas();
+      showToast("Cleared desk layout assignments.", "info");
+    }
+
+    function renderSeatingCanvas() {
+      const cls = getActiveClass();
+      const container = document.getElementById('seating-canvas-grid');
+      const unassignedBadge = document.getElementById('unassigned-count-badge');
+      if (!container) return;
+
+      const totalStudents = cls.students.length;
+      const assignedIds = Object.values(cls.seating.deskAssignments);
+      const unassignedCount = cls.students.filter(s => !assignedIds.includes(s.id)).length;
+
+      unassignedBadge.textContent = `Unassigned: ${unassignedCount}`;
+
+      if (totalStudents === 0) {
+        container.innerHTML = `
+          <div class="py-12 text-center text-stone-400 font-medium">
+            No students enrolled in this class section yet. Add students in Tab 1 first.
+          </div>
+        `;
+        return;
+      }
+
+      const mode = cls.seating.mode;
+      const numSlots = Math.max(totalStudents, Object.keys(cls.seating.deskAssignments).length);
+
+      if (mode === 'grid') {
+        const cols = cls.seating.cols || 4;
+        container.className = `grid grid-cols-1 sm:grid-cols-2 md:grid-cols-${cols} gap-4`;
+
+        let html = '';
+        for (let idx = 0; idx < numSlots; idx++) {
+          const studentId = cls.seating.deskAssignments[idx];
+          const student = cls.students.find(s => s.id === studentId);
+
+          if (student) {
+            const isPinned = student.pinnedSeat !== null && student.pinnedSeat !== undefined;
+            html += `
+              <div class="bg-[#FAF7F2] p-4 rounded-xl border border-stone-200 shadow-xs relative flex flex-col justify-between space-y-2 hover:border-maroon-400 transition">
+                <div class="flex items-center justify-between">
+                  <span class="text-[10px] font-mono font-bold text-stone-400">DESK #${idx + 1}</span>
+                  <div class="flex items-center gap-1.5">
+                    <span class="w-2.5 h-2.5 rounded-full ${student.attendance === 'P' ? 'bg-emerald-500' : student.attendance === 'L' ? 'bg-amber-500' : 'bg-rose-500'}"></span>
+                    <button onclick="togglePinSeat('${student.id}')" class="text-xs ${isPinned ? 'text-amber-600' : 'text-stone-300 hover:text-stone-600'}" title="${isPinned ? 'Unpin Seat' : 'Pin Seat'}">
+                      <i class="fa-solid fa-thumbtack"></i>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="my-1">
+                  <h4 class="font-extrabold text-xs text-stone-800 line-clamp-1">${student.name}</h4>
+                  <p class="text-[10px] font-mono text-stone-500">${student.rollId}</p>
+                </div>
+
+                <div class="flex items-center justify-between pt-1 border-t border-stone-200/60 text-[10px]">
+                  <span class="font-semibold text-stone-500">Total Score:</span>
+                  <span class="font-extrabold text-maroon-800">${student.ca1 + student.ca2 + student.exam}/100</span>
+                </div>
+              </div>
+            `;
+          } else {
+            html += `
+              <div class="bg-stone-50/50 p-4 rounded-xl border border-dashed border-stone-300 flex items-center justify-center text-stone-400 text-xs font-mono font-semibold min-h-[90px]">
+                EMPTY DESK #${idx + 1}
+              </div>
+            `;
+          }
+        }
+        container.innerHTML = html;
+
+      } else {
+        // Collaborative Groups Mode
+        const groupSize = cls.seating.groupSize || 4;
+        const totalGroups = Math.ceil(numSlots / groupSize);
+        container.className = `grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6`;
+
+        let html = '';
+        for (let g = 0; g < totalGroups; g++) {
+          let groupMembers = [];
+          for (let slot = g * groupSize; slot < (g + 1) * groupSize; slot++) {
+            const stId = cls.seating.deskAssignments[slot];
+            if (stId) {
+              const st = cls.students.find(s => s.id === stId);
+              if (st) groupMembers.push({ student: st, slot });
+            }
+          }
+
+          html += `
+            <div class="bg-[#FAF7F2] p-5 rounded-2xl border border-stone-200 shadow-xs space-y-3">
+              <div class="flex items-center justify-between border-b border-stone-200 pb-2">
+                <span class="font-extrabold text-xs text-maroon-900 uppercase tracking-wider flex items-center gap-1.5">
+                  <i class="fa-solid fa-people-group text-slateBlue-500"></i> Group ${g + 1}
+                </span>
+                <span class="text-[10px] font-bold bg-stone-200 text-stone-700 px-2 py-0.5 rounded-full">
+                  ${groupMembers.length} / ${groupSize} Members
+                </span>
+              </div>
+
+              <div class="space-y-2">
+                ${groupMembers.map(m => `
+                  <div class="bg-white p-2.5 rounded-lg border border-stone-200 flex items-center justify-between text-xs">
+                    <div class="flex items-center space-x-2 space-x-reverse">
+                      <span class="w-2 h-2 rounded-full ${m.student.attendance === 'P' ? 'bg-emerald-500' : m.student.attendance === 'L' ? 'bg-amber-500' : 'bg-rose-500'}"></span>
+                      <div>
+                        <p class="font-extrabold text-stone-800 text-[11px]">${m.student.name}</p>
+                        <p class="text-[9px] text-stone-400 font-mono">${m.student.rollId}</p>
+                      </div>
+                    </div>
+                    <button onclick="togglePinSeat('${m.student.id}')" class="${m.student.pinnedSeat !== null ? 'text-amber-600' : 'text-stone-300 hover:text-stone-500'}" title="Pin Slot">
+                      <i class="fa-solid fa-thumbtack text-xs"></i>
+                    </button>
+                  </div>
+                `).join('')}
+                ${groupMembers.length === 0 ? `<p class="text-xs text-stone-400 italic text-center py-3">No members assigned.</p>` : ''}
+              </div>
+            </div>
+          `;
+        }
+        container.innerHTML = html;
+      }
+    }
+
+    /* ==========================================================================
+       6. TAB 3: CLASSROOM QUIZ & DRILL STUDIO
+       ========================================================================== */
+    function setQuizSubMode(mode) {
+      currentQuizSubMode = mode;
+      const btnRunner = document.getElementById('quiz-submode-btn-runner');
+      const btnBank = document.getElementById('quiz-submode-btn-bank');
+      const runnerBox = document.getElementById('quiz-runner-container');
+      const bankBox = document.getElementById('quiz-bank-container');
+
+      if (mode === 'runner') {
+        btnRunner.className = 'px-4 py-1.5 rounded-md bg-white text-maroon-800 shadow-xs font-bold';
+        btnBank.className = 'px-4 py-1.5 rounded-md text-stone-600 hover:text-stone-900';
+        runnerBox.classList.remove('hidden');
+        bankBox.classList.add('hidden');
+      } else {
+        btnBank.className = 'px-4 py-1.5 rounded-md bg-white text-maroon-800 shadow-xs font-bold';
+        btnRunner.className = 'px-4 py-1.5 rounded-md text-stone-600 hover:text-stone-900';
+        bankBox.classList.remove('hidden');
+        runnerBox.classList.add('hidden');
+      }
+    }
+
+    function renderQuizStudentDropdown() {
+      const cls = getActiveClass();
+      const select = document.getElementById('quiz-student-select');
+      select.innerHTML = '<option value="">-- Choose Student --</option>' + cls.students.map(s => `
+        <option value="${s.id}" ${s.id === activeQuizStudentId ? 'selected' : ''}>
+          ${s.name} (${s.rollId}) [${s.attendance}]
+        </option>
+      `).join('');
+    }
+
+    function handleSelectQuizStudent(studentId) {
+      activeQuizStudentId = studentId;
+      updateSpotlightCard();
+    }
+
+    function pickRandomPresentStudent() {
+      const cls = getActiveClass();
+      const eligible = cls.students.filter(s => s.attendance === 'P' || s.attendance === 'L');
+
+      if (eligible.length === 0) {
+        showToast("No present students available to pick!", "warning");
+        return;
+      }
+
+      // Shuffle animation simulation
+      let count = 0;
+      const interval = setInterval(() => {
+        const temp = eligible[Math.floor(Math.random() * eligible.length)];
+        document.getElementById('spotlight-student-name').textContent = temp.name;
+        document.getElementById('spotlight-student-roll').textContent = temp.rollId;
+        count++;
+        if (count > 10) {
+          clearInterval(interval);
+          const winner = eligible[Math.floor(Math.random() * eligible.length)];
+          activeQuizStudentId = winner.id;
+          renderQuizStudentDropdown();
+          updateSpotlightCard();
+          showToast(`Selected ${winner.name}!`, 'success');
+        }
+      }, 80);
+    }
+
+    function updateSpotlightCard() {
+      const cls = getActiveClass();
+      const student = cls.students.find(s => s.id === activeQuizStudentId);
+
+      const nameEl = document.getElementById('spotlight-student-name');
+      const rollEl = document.getElementById('spotlight-student-roll');
+
+      if (student) {
+        nameEl.textContent = student.name;
+        rollEl.textContent = `${student.rollId} • CA1 Score: ${student.ca1}/20`;
+      } else {
+        nameEl.textContent = 'Select a Student';
+        rollEl.textContent = 'No active turn';
+      }
+    }
+
+    function renderQuizStage() {
+      const cls = getActiveClass();
+      const quizzes = cls.quizzes || [];
+
+      const textEl = document.getElementById('quiz-question-text');
+      const stepEl = document.getElementById('quiz-step-indicator');
+      const optionsGrid = document.getElementById('quiz-options-grid');
+      const feedbackBox = document.getElementById('quiz-feedback-box');
+
+      feedbackBox.classList.add('hidden');
+
+      if (quizzes.length === 0) {
+        stepEl.textContent = 'Question 0 of 0';
+        textEl.textContent = 'No questions available in the question bank. Add questions in the Manager tab.';
+        optionsGrid.innerHTML = '';
+        return;
+      }
+
+      if (activeQuizIndex < 0) activeQuizIndex = 0;
+      if (activeQuizIndex >= quizzes.length) activeQuizIndex = quizzes.length - 1;
+
+      const q = quizzes[activeQuizIndex];
+      stepEl.textContent = `Question ${activeQuizIndex + 1} of ${quizzes.length}`;
+      textEl.textContent = q.question;
+
+      optionsGrid.innerHTML = q.options.map((opt, idx) => `
+        <button onclick="checkQuizAnswer(${idx})" class="p-3 bg-[#FAF7F2] hover:bg-stone-100 text-stone-800 rounded-xl border border-stone-200 text-xs font-bold text-left transition flex items-start gap-2.5">
+          <span class="w-5 h-5 rounded-md bg-maroon-100 text-maroon-800 flex items-center justify-center font-extrabold text-[10px] shrink-0">
+            ${String.fromCharCode(65 + idx)}
+          </span>
+          <span class="mt-0.5">${opt}</span>
+        </button>
+      `).join('');
+    }
+
+    function checkQuizAnswer(selectedIndex) {
+      const cls = getActiveClass();
+      const quizzes = cls.quizzes || [];
+      const q = quizzes[activeQuizIndex];
+      if (!q) return;
+
+      const feedbackBox = document.getElementById('quiz-feedback-box');
+      const titleEl = document.getElementById('quiz-feedback-title');
+      const explanationEl = document.getElementById('quiz-explanation-text');
+
+      feedbackBox.classList.remove('hidden');
+
+      if (selectedIndex === q.correctIndex) {
+        feedbackBox.className = 'p-4 rounded-xl border bg-emerald-50 border-emerald-300 text-emerald-900 space-y-2';
+        titleEl.textContent = 'Correct Answer! (+Bonus Eligible)';
+        explanationEl.textContent = q.explanation || 'Great job!';
+      } else {
+        feedbackBox.className = 'p-4 rounded-xl border bg-rose-50 border-rose-300 text-rose-900 space-y-2';
+        titleEl.textContent = `Incorrect (Correct Option: ${String.fromCharCode(65 + q.correctIndex)})`;
+        explanationEl.textContent = q.explanation || 'Review lesson material.';
+      }
+    }
+
+    function awardBonusPoint() {
+      if (!activeQuizStudentId) {
+        showToast("Select a student first before awarding bonus points!", "warning");
+        return;
+      }
+
+      const cls = getActiveClass();
+      const st = cls.students.find(s => s.id === activeQuizStudentId);
+      if (st) {
+        st.ca1 = Math.min(20, st.ca1 + 2);
+        saveState();
+        updateSpotlightCard();
+        renderRosterView();
+        showToast(`Awarded +2 Bonus points to ${st.name}!`, 'success');
+      }
+    }
+
+    function navigateQuizQuestion(dir) {
+      activeQuizIndex += dir;
+      renderQuizStage();
+    }
+
+    function handleAddQuestion(e) {
+      e.preventDefault();
+      const cls = getActiveClass();
+      const qText = document.getElementById('new-q-text').value.trim();
+      const opt0 = document.getElementById('new-q-opt-0').value.trim();
+      const opt1 = document.getElementById('new-q-opt-1').value.trim();
+      const opt2 = document.getElementById('new-q-opt-2').value.trim();
+      const opt3 = document.getElementById('new-q-opt-3').value.trim();
+      const correct = parseInt(document.getElementById('new-q-correct').value, 10);
+      const explanation = document.getElementById('new-q-explanation').value.trim();
+
+      if (!qText || !opt0 || !opt1) return;
+
+      const newQ = {
+        id: 'q_' + Date.now(),
+        question: qText,
+        options: [opt0, opt1, opt2, opt3],
+        correctIndex: correct,
+        explanation: explanation
+      };
+
+      cls.quizzes.push(newQ);
+      saveState();
+
+      document.getElementById('new-q-text').value = '';
+      document.getElementById('new-q-opt-0').value = '';
+      document.getElementById('new-q-opt-1').value = '';
+      document.getElementById('new-q-opt-2').value = '';
+      document.getElementById('new-q-opt-3').value = '';
+      document.getElementById('new-q-explanation').value = '';
+
+      renderQuestionBankList();
+      renderQuizStage();
+      showToast("Added new question to bank!", "success");
+    }
+
+    function deleteQuestion(qId) {
+      const cls = getActiveClass();
+      cls.quizzes = cls.quizzes.filter(q => q.id !== qId);
+      saveState();
+      renderQuestionBankList();
+      renderQuizStage();
+      showToast("Question deleted.", "info");
+    }
+
+    function renderQuestionBankList() {
+      const cls = getActiveClass();
+      const container = document.getElementById('quiz-bank-list');
+      if (!container) return;
+
+      if (cls.quizzes.length === 0) {
+        container.innerHTML = '<p class="text-xs text-stone-400 py-4 text-center">No questions in bank.</p>';
+        return;
+      }
+
+      container.innerHTML = cls.quizzes.map((q, idx) => `
+        <div class="bg-[#FAF7F2] p-4 rounded-xl border border-stone-200 flex items-start justify-between gap-4 text-xs">
+          <div class="space-y-1">
+            <span class="text-[10px] font-mono font-bold text-maroon-700">Q${idx + 1}</span>
+            <p class="font-extrabold text-stone-800">${q.question}</p>
+            <p class="text-[11px] text-stone-500">Correct: Option ${String.fromCharCode(65 + q.correctIndex)} (${q.options[q.correctIndex]})</p>
+          </div>
+          <button onclick="deleteQuestion('${q.id}')" class="text-stone-400 hover:text-rose-600 transition p-1">
+            <i class="fa-solid fa-trash-can"></i>
+          </button>
+        </div>
+      `).join('');
+    }
+
+    function renderQuizStudio() {
+      renderQuizStudentDropdown();
+      updateSpotlightCard();
+      renderQuizStage();
+      renderQuestionBankList();
+    }
+
+    /* ==========================================================================
+       7. TAB 4: PRINT-READY FORMAL REPORT
+       ========================================================================== */
+    function renderPrintReadySheet() {
+      const cls = getActiveClass();
+      const container = document.getElementById('print-sheet-container');
+      if (!container) return;
+
+      const totalStudents = cls.students.length;
+      const presentCount = cls.students.filter(s => s.attendance === 'P' || s.attendance === 'L').length;
+      const attendanceRate = totalStudents > 0 ? Math.round((presentCount / totalStudents) * 100) : 0;
+      
+      const totalScoreSum = cls.students.reduce((acc, s) => acc + (s.ca1 + s.ca2 + s.exam), 0);
+      const classAvg = totalStudents > 0 ? Math.round(totalScoreSum / totalStudents) : 0;
+
+      container.innerHTML = `
+        <div class="space-y-6">
+          
+          <!-- School Header Block -->
+          <div class="text-center border-b-2 border-stone-800 pb-4">
+            <h1 class="text-2xl font-extrabold tracking-wider uppercase">EXCELLENCE INTERNATIONAL ACADEMY</h1>
+            <p class="text-xs font-semibold text-stone-600">Official Class Record Ledger & Continuous Assessment Sheet</p>
+          </div>
+
+          <!-- Metadata Grid -->
+          <div class="grid grid-cols-2 gap-4 text-xs font-mono border p-3 rounded bg-stone-50">
+            <div><strong>Class Section:</strong> ${cls.name}</div>
+            <div><strong>Subject Code:</strong> ${cls.code}</div>
+            <div><strong>Academic Term:</strong> ${cls.term}</div>
+            <div><strong>Date Generated:</strong> ${new Date().toLocaleDateString()}</div>
+          </div>
+
+          <!-- Summary KPI Strip -->
+          <div class="flex justify-between text-xs font-bold border-t border-b border-stone-300 py-2">
+            <span>Enrolled Students: ${totalStudents}</span>
+            <span>Attendance Rate: ${attendanceRate}%</span>
+            <span>Class Average: ${classAvg}/100</span>
+          </div>
+
+          <!-- Full Table -->
+          <table class="w-full text-left text-xs border-collapse border border-stone-300">
+            <thead>
+              <tr class="bg-stone-100 border-b border-stone-300 font-bold">
+                <th class="p-2 border-r border-stone-300">Roll ID</th>
+                <th class="p-2 border-r border-stone-300">Student Full Name</th>
+                <th class="p-2 border-r border-stone-300 text-center">Status</th>
+                <th class="p-2 border-r border-stone-300 text-center">CA 1 (20)</th>
+                <th class="p-2 border-r border-stone-300 text-center">CA 2 (20)</th>
+                <th class="p-2 border-r border-stone-300 text-center">Exam (60)</th>
+                <th class="p-2 border-r border-stone-300 text-center">Total</th>
+                <th class="p-2 border-r border-stone-300 text-center">Grade</th>
+                <th class="p-2">Remark</th>
+              </tr>
+            </thead>
+             <tbody>
+              ${cls.students.map(s => {
+                const total = s.ca1 + s.ca2 + s.exam;
+                const { grade, remark } = calculateGradeAndRemark(total);
+                return `
+                  <tr class="border-b border-stone-200">
+                    <td class="p-2 border-r border-stone-300 font-mono">${s.rollId}</td>
+                    <td class="p-2 border-r border-stone-300 font-bold">${s.name}</td>
+                    <td class="p-2 border-r border-stone-300 text-center font-bold">${s.attendance}</td>
+                    <td class="p-2 border-r border-stone-300 text-center">${s.ca1}</td>
+                    <td class="p-2 border-r border-stone-300 text-center">${s.ca2}</td>
+                    <td class="p-2 border-r border-stone-300 text-center">${s.exam}</td>
+                    <td class="p-2 border-r border-stone-300 text-center font-bold">${total}</td>
+                    <td class="p-2 border-r border-stone-300 text-center font-bold">${grade}</td>
+                    <td class="p-2">${remark}</td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+
+          <!-- Signature Block -->
+          <div class="pt-12 grid grid-cols-2 gap-12 text-xs font-bold">
+            <div class="border-t border-stone-400 pt-2 text-center">
+              Subject Teacher Signature & Date
+            </div>
+            <div class="border-t border-stone-400 pt-2 text-center">
+              Principal / Head Teacher Endorsement
+            </div>
+          </div>
+
+        </div>
+      `;
+    }
+
+    /* ==========================================================================
+       8. MASTER RENDER ENGINE
+       ========================================================================== */
+    function renderAllViews() {
+      renderClassDropdown();
+         renderRosterView();
+      renderSeatingCanvas();
+      renderQuizStudio();
+      renderPrintReadySheet();
+    }
+
+    window.onload = function() {
+      renderAllViews();
+    };
+  </script>
+</body>
+</html>
